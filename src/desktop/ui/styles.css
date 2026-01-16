@@ -1,0 +1,98 @@
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background-color: #1a1a1a;
+  color: #fff;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+h2 {
+  margin: 0 0 10px 0;
+  font-size: 1.2rem;
+  color: #61dafb;
+}
+
+.status-panel {
+  background: #2a2a2a;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #333;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+}
+
+.status-value {
+  font-weight: bold;
+}
+
+.status-value.connected { color: #4caf50; }
+.status-value.connecting { color: #ff9800; }
+.status-value.disconnected { color: #f44336; }
+
+.controls {
+  display: flex;
+  gap: 10px;
+}
+
+button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: none;
+  background: #61dafb;
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+}
+
+button:hover {
+  background: #4fa8d1;
+}
+
+button:disabled {
+  background: #444;
+  color: #888;
+  cursor: not-allowed;
+}
+
+.preview-area {
+  margin-top: 10px;
+  border: 1px solid #444;
+  height: 60px; /* Reduced since we only capture a small strip */
+  overflow: hidden;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+canvas {
+  max-width: 100%;
+  border: 1px solid #555;
+}
+
+.region-inputs {
+  display: flex;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+input {
+  width: 50px;
+  background: #333;
+  border: 1px solid #444;
+  color: white;
+  padding: 4px;
+  border-radius: 3px;
+}

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Antigravity Remote</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h2>Remote Control</h2>
+    
+    <div class="status-panel">
+      <div class="status-item">
+        <span>Status:</span>
+        <span id="connection-status" class="status-value disconnected">Disconnected</span>
+      </div>
+      <div class="status-item">
+        <span>Session ID:</span>
+        <span id="session-id" class="status-value">...</span>
+      </div>
+      <div class="status-item">
+        <span>FPS:</span>
+        <span id="fps-counter" class="status-value">0</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="btn-start">Start Capture</button>
+      <button id="btn-stop" disabled>Stop</button>
+    </div>
+
+    <div class="status-panel">
+      <div class="status-item" style="display:block">
+         <div style="margin-bottom:5px">Region (x, y, w, h):</div>
+         <div class="region-inputs">
+           <input type="number" id="inp-x" value="0">
+           <input type="number" id="inp-y" value="0">
+           <input type="number" id="inp-w" value="400">
+           <input type="number" id="inp-h" value="50">
+         </div>
+      </div>
+    </div>
+
+    <div class="preview-area">
+      <canvas id="preview-canvas" width="400" height="50"></canvas>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
