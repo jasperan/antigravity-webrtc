@@ -15,6 +15,29 @@ A system to remotely view and control the Antigravity IDE input box (or any desk
 
 ## Setup
 
+<!-- one-command-install -->
+> **One-command install** — clone, configure, and run in a single step:
+>
+> ```bash
+> curl -fsSL https://raw.githubusercontent.com/jasperan/antigravity-webrtc/main/install.sh | bash
+> ```
+>
+> <details><summary>Advanced options</summary>
+>
+> Override install location:
+> ```bash
+> PROJECT_DIR=/opt/myapp curl -fsSL https://raw.githubusercontent.com/jasperan/antigravity-webrtc/main/install.sh | bash
+> ```
+>
+> Or install manually:
+> ```bash
+> git clone https://github.com/jasperan/antigravity-webrtc.git
+> cd antigravity-webrtc
+> # See below for setup instructions
+> ```
+> </details>
+
+
 1.  **Clone the repository**:
     ```bash
     git clone <repository-url>
@@ -51,7 +74,7 @@ npm run mobile:dev
 ```
 *Runs on port 3001.*
 -   Open `http://localhost:3001` in your browser.
--   **Note**: To test on a real phone, your phone must be on the same network. You will need to access it via your computer's local IP (e.g., `http://192.168.1.5:3001`). 
+-   **Note**: To test on a real phone, your phone must be on the same network. You will need to access it via your computer's local IP (e.g., `http://192.168.1.5:3001`).
 -   **Important**: WebRTC requires HTTPS for non-localhost addresses while using `getUserMedia` (screen sharing), but for the *receiving* mobile client, HTTP usually works if the *sending* side (Desktop) is secure or localhost. However, typically `vite --host` is needed to expose to network.
 
 ### 3. Start the Desktop App
