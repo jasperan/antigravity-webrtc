@@ -2,8 +2,8 @@
 node_modules
 /node_modules
 package-lock.json
-# Keep package-lock if you want lockfiles, but some prefer ignoring. 
-# Usually we keep package-lock.json. 
+# Keep package-lock if you want lockfiles, but some prefer ignoring.
+# Usually we keep package-lock.json.
 # User said "essentials", lock file is essential for reproducible builds.
 # I will NOT ignore package-lock.json unless requested.
 
@@ -53,3 +53,38 @@ Thumbs.db
 *.tsbuildinfo
 
 antigravity_remote_control_plan.md
+CLAUDE.md
+
+# Claude-generated plan documents
+docs/plans/
+task_plan.md
+findings.md
+progress.md
+
+# Dogfood / QA output
+dogfood-output/
+.playwright-mcp/
+
+
+# OpenCode-generated documentation (local reference only)
+TESTING_REPORT.md
+AGENT_HARNESS_ANNEX.md
+SKILLS_EXECUTION_SUMMARY.md
+
+# Generated documentation
+docs/plans/
+docs/*.md
+!docs/README.md
+*_FEATURES.md
+*_ENHANCEMENTS.md
+*_REPORT.md
+
+# Agent/skill directories (local-only)
+.agents/
+.claude/
+.crush/
+.openhands/
+.serena/
+
+# Generated content
+content/

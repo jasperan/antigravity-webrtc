@@ -16,7 +16,7 @@ A system to remotely view and control the Antigravity IDE input box (or any desk
 ## Setup
 
 <!-- one-command-install -->
-> **One-command install** — clone, configure, and run in a single step:
+> **One-command install**: clone, configure, and run in a single step:
 >
 > ```bash
 > curl -fsSL https://raw.githubusercontent.com/jasperan/antigravity-webrtc/main/install.sh | bash
