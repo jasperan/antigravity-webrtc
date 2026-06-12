@@ -8,15 +8,12 @@ const CONFIG = {
 };
 
 const state = {
-    sessionId: null,
-    isCapturing: false,
-    isConnected: false
+    sessionId: null
 };
 
 // UI Elements
 const statusEl = document.getElementById('connection-status');
 const sessionIdEl = document.getElementById('session-id');
-const fpsEl = document.getElementById('fps-counter');
 const btnStart = document.getElementById('btn-start');
 const btnStop = document.getElementById('btn-stop');
 const canvas = document.getElementById('preview-canvas');
@@ -44,8 +41,6 @@ async function init() {
         signaling = new SignalingClient(CONFIG.serverUrl, (status) => {
             statusEl.textContent = status;
             statusEl.className = `status-value ${status}`;
-            if (status === 'connected') state.isConnected = true;
-            else if (status === 'disconnected') state.isConnected = false;
         });
 
         signaling.connect(state.sessionId);
@@ -70,7 +65,6 @@ btnStart.addEventListener('click', async () => {
     if (source) {
         const success = await capturer.startCapture(source.id);
         if (success) {
-            state.isCapturing = true;
             updateUI();
 
             // Update crop region
@@ -84,16 +78,22 @@ btnStart.addEventListener('click', async () => {
 
 btnStop.addEventListener('click', () => {
     capturer.stopCapture();
-    state.isCapturing = false;
     updateUI();
 });
 
+// Parse an input value to a non-negative integer, defaulting to `fallback`
+// when the field is empty or not a number (so an empty box never blanks the canvas).
+function intValue(input, fallback) {
+    const n = parseInt(input.value, 10);
+    return Number.isNaN(n) ? fallback : Math.max(0, n);
+}
+
 function updateCrop() {
     const region = {
-        x: parseInt(inputs.x.value),
-        y: parseInt(inputs.y.value),
-        width: parseInt(inputs.w.value),
-        height: parseInt(inputs.h.value)
+        x: intValue(inputs.x, 0),
+        y: intValue(inputs.y, 0),
+        width: intValue(inputs.w, 400),
+        height: intValue(inputs.h, 50)
     };
     capturer.setCropRegion(region);
 }
@@ -102,8 +102,8 @@ function updateCrop() {
 Object.values(inputs).forEach(inp => inp.addEventListener('change', updateCrop));
 
 function updateUI() {
-    btnStart.disabled = state.isCapturing;
-    btnStop.disabled = !state.isCapturing;
+    btnStart.disabled = capturer.isCapturing;
+    btnStop.disabled = !capturer.isCapturing;
 }
 
 // Start Init

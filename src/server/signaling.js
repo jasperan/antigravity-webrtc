@@ -1,5 +1,8 @@
 const sessionManager = require('./sessionManager');
 
+// The peer role for a given role: desktop <-> mobile.
+const PEER = { desktop: 'mobile', mobile: 'desktop' };
+
 // Helper to update activity
 const touchSession = (sessionId) => {
     const session = sessionManager.getSession(sessionId);
@@ -25,7 +28,7 @@ module.exports = (io) => {
             socket.emit('registered', { sessionId, role });
 
             // Notify other peer if connected
-            const otherRole = role === 'desktop' ? 'mobile' : 'desktop';
+            const otherRole = PEER[role];
             if (session[otherRole].connected) {
                 io.to(session[otherRole].socketId).emit('client-connected', { role });
                 socket.emit('client-connected', { role: otherRole });
@@ -38,27 +41,21 @@ module.exports = (io) => {
             });
         });
 
-        socket.on('offer', ({ sessionId, sdp }) => {
+        // Relay an SDP message to the target peer if it is connected.
+        const relaySdp = (sessionId, sdp, targetRole, event) => {
             touchSession(sessionId);
             const session = sessionManager.getSession(sessionId);
-            if (session && session.mobile.connected) {
-                console.log(`Forwarding offer to mobile in session ${sessionId}`);
-                io.to(session.mobile.socketId).emit('offer-received', { sdp });
+            if (session && session[targetRole].connected) {
+                console.log(`Forwarding ${event} to ${targetRole} in session ${sessionId}`);
+                io.to(session[targetRole].socketId).emit(`${event}-received`, { sdp });
             } else {
-                console.warn(`Mobile not connected for offer in session ${sessionId}`);
+                console.warn(`${targetRole} not connected for ${event} in session ${sessionId}`);
             }
-        });
+        };
 
-        socket.on('answer', ({ sessionId, sdp }) => {
-            touchSession(sessionId);
-            const session = sessionManager.getSession(sessionId);
-            if (session && session.desktop.connected) {
-                console.log(`Forwarding answer to desktop in session ${sessionId}`);
-                io.to(session.desktop.socketId).emit('answer-received', { sdp });
-            } else {
-                console.warn(`Desktop not connected for answer in session ${sessionId}`);
-            }
-        });
+        socket.on('offer', ({ sessionId, sdp }) => relaySdp(sessionId, sdp, 'mobile', 'offer'));
+
+        socket.on('answer', ({ sessionId, sdp }) => relaySdp(sessionId, sdp, 'desktop', 'answer'));
 
         socket.on('ice-candidate', ({ sessionId, candidate, role }) => {
             touchSession(sessionId);
@@ -66,7 +63,7 @@ module.exports = (io) => {
             if (!session) return;
 
             // candidate comes FROM 'role'. We need to send it TO 'targetRole'
-            const targetRole = role === 'desktop' ? 'mobile' : 'desktop';
+            const targetRole = PEER[role];
 
             if (session[targetRole].connected) {
                 console.log(`Forwarding ICE candidate to ${targetRole}`);
@@ -88,7 +85,7 @@ module.exports = (io) => {
                 const { sessionId, role } = result;
                 const session = sessionManager.getSession(sessionId);
                 if (session) {
-                    const otherRole = role === 'desktop' ? 'mobile' : 'desktop';
+                    const otherRole = PEER[role];
                     if (session[otherRole].connected) {
                         io.to(session[otherRole].socketId).emit('client-disconnected', { role });
                     }

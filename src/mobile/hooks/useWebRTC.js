@@ -1,16 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { SignalingClient } from '../services/signalingClient';
 
+const RTC_CONFIG = {
+    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+};
+
 export const useWebRTC = (serverUrl, sessionId) => {
     const [status, setStatus] = useState('disconnected');
     const [remoteStream, setRemoteStream] = useState(null);
     const peerConnection = useRef(null);
     const signaling = useRef(null);
     const dataChannel = useRef(null);
-
-    const config = {
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-    };
 
     const handleOffer = useCallback(async ({ sdp }) => {
         if (!peerConnection.current) return;
@@ -49,7 +49,7 @@ export const useWebRTC = (serverUrl, sessionId) => {
         signaling.current = new SignalingClient(serverUrl, (st) => setStatus(st));
 
         // Init Peer Connection
-        peerConnection.current = new RTCPeerConnection(config);
+        peerConnection.current = new RTCPeerConnection(RTC_CONFIG);
 
         peerConnection.current.ontrack = (event) => {
             console.log('Received remote track', event.streams[0]);

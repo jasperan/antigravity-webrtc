@@ -95,6 +95,33 @@ npm run desktop:start
 5.  Type in the text box on the mobile app. The keystrokes will be sent to your desktop.
 6.  **Tip**: Make sure the target window on your Desktop (e.g., the IDE) is focused so it receives the simulated keystrokes.
 
+## Project Structure
+
+```
+src/
+  server/        # Express + Socket.io signaling server
+    index.js         # Entry point, HTTP/Socket.io setup, REST API
+    signaling.js     # WebRTC signaling relay (offer/answer/ICE)
+    sessionManager.js# In-memory session + ICE candidate tracking
+    config.js        # Env-driven config (port, CORS origin, timeout)
+  desktop/       # Electron screen-capture + keystroke control
+    main.js          # Electron main process
+    preload.js       # Context-isolated preload bridge
+    keystroke-simulator.js
+    ui/              # Renderer (capture, signaling, WebRTC peer)
+  mobile/        # React + Vite viewer and input relay
+    App.jsx
+    components/      # KeyboardInput, RemoteVideoDisplay
+    hooks/           # useWebRTC
+    services/        # signalingClient
+tests/           # Jest + Supertest server integration tests
+vite.config.js   # Vite (root: src/mobile, out: dist/mobile)
+```
+
+The signaling server reads its CORS origin and session timeout from the
+environment (see `.env.example`); the Socket.io and Express layers share the
+same configured origin.
+
 ## Development
 
 -   **Server Tests**: `npm test`

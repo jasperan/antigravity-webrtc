@@ -16,7 +16,7 @@ app.use(express.json());
 // Socket.io setup
 const io = new Server(server, {
     cors: {
-        origin: '*', // Allow all for now, or match config.corsOrigin
+        origin: config.corsOrigin,
         methods: ["GET", "POST"]
     }
 });
@@ -43,9 +43,11 @@ app.get('/api/sessions/:sessionId/status', (req, res) => {
 });
 
 // Periodic cleanup
-setInterval(() => {
+const cleanupInterval = setInterval(() => {
     sessionManager.cleanupExpiredSessions(config.sessionTimeout);
 }, 60 * 1000);
+// Don't keep the process (or test runner) alive solely for the cleanup timer.
+if (typeof cleanupInterval.unref === 'function') cleanupInterval.unref();
 
 // Start server
 if (require.main === module) {
