@@ -36,12 +36,9 @@ class SessionManager {
         const session = this.getSession(sessionId);
         if (!session) return null;
 
-        if (role === 'desktop') {
-            session.desktop.socketId = socketId;
-            session.desktop.connected = true;
-        } else if (role === 'mobile') {
-            session.mobile.socketId = socketId;
-            session.mobile.connected = true;
+        if (session[role]) {
+            session[role].socketId = socketId;
+            session[role].connected = true;
         }
 
         session.lastActivity = Date.now();
@@ -50,15 +47,12 @@ class SessionManager {
 
     removeClient(socketId) {
         for (const [sessionId, session] of this.sessions.entries()) {
-            if (session.desktop.socketId === socketId) {
-                session.desktop.connected = false;
-                session.desktop.socketId = null;
-                return { sessionId, role: 'desktop' };
-            }
-            if (session.mobile.socketId === socketId) {
-                session.mobile.connected = false;
-                session.mobile.socketId = null;
-                return { sessionId, role: 'mobile' };
+            for (const role of ['desktop', 'mobile']) {
+                if (session[role].socketId === socketId) {
+                    session[role].connected = false;
+                    session[role].socketId = null;
+                    return { sessionId, role };
+                }
             }
         }
         return null;
@@ -69,11 +63,7 @@ class SessionManager {
         const session = this.getSession(sessionId);
         if (!session) return false;
 
-        if (targetRole === 'desktop') {
-            session.iceCandidatesQueue.desktop.push(candidate);
-        } else {
-            session.iceCandidatesQueue.mobile.push(candidate);
-        }
+        session.iceCandidatesQueue[targetRole].push(candidate);
         return true;
     }
 
@@ -81,15 +71,8 @@ class SessionManager {
         const session = this.getSession(sessionId);
         if (!session) return [];
 
-        const queue = targetRole === 'desktop' ? session.iceCandidatesQueue.desktop : session.iceCandidatesQueue.mobile;
-        const candidates = [...queue];
-        // Clear queue after retrieval
-        if (targetRole === 'desktop') {
-            session.iceCandidatesQueue.desktop = [];
-        } else {
-            session.iceCandidatesQueue.mobile = [];
-        }
-        return candidates;
+        // Return queued candidates and clear the queue in one step
+        return session.iceCandidatesQueue[targetRole].splice(0);
     }
 
     cleanupExpiredSessions(timeoutMs) {

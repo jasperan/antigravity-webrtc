@@ -8,12 +8,10 @@ export class SignalingClient {
         this.role = 'desktop';
         this.onStateChange = onStateChange || (() => { });
 
-        // Event callbacks
-        this.onOffer = null;
+        // Event callbacks (desktop receives answers and ICE; it is notified when a peer connects)
         this.onAnswer = null;
         this.onIceCandidate = null;
         this.onClientConnected = null;
-        this.onClientDisconnected = null;
     }
 
     connect(sessionId) {
@@ -32,10 +30,6 @@ export class SignalingClient {
             this.onStateChange('connected');
         });
 
-        this.socket.on('offer-received', (data) => {
-            if (this.onOffer) this.onOffer(data);
-        });
-
         this.socket.on('answer-received', (data) => {
             if (this.onAnswer) this.onAnswer(data);
         });
@@ -47,11 +41,6 @@ export class SignalingClient {
         this.socket.on('client-connected', (data) => {
             console.log('Peer connected:', data.role);
             if (this.onClientConnected) this.onClientConnected(data.role);
-        });
-
-        this.socket.on('client-disconnected', (data) => {
-            console.log('Peer disconnected:', data.role);
-            if (this.onClientDisconnected) this.onClientDisconnected(data.role);
         });
 
         this.socket.on('disconnect', () => {

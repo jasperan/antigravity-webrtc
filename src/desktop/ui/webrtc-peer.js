@@ -10,8 +10,7 @@ export class WebRTCPeer {
             ]
         };
 
-        // Setup signaling handlers
-        this.signaling.onOffer = (data) => this.handleOffer(data); // Mobile usually sends answer, not offer, but symmetry is good
+        // Setup signaling handlers (desktop is the offerer; it receives answers, not offers)
         this.signaling.onAnswer = (data) => this.handleAnswer(data);
         this.signaling.onIceCandidate = (data) => this.handleCandidate(data);
         this.signaling.onClientConnected = () => this.startConnection(); // Desktop initiates

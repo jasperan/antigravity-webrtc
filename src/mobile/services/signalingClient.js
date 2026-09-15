@@ -8,11 +8,9 @@ export class SignalingClient {
         this.role = 'mobile';
         this.onStateChange = onStateChange || (() => { });
 
+        // Event callbacks (mobile receives the offer and ICE candidates)
         this.onOffer = null;
-        this.onAnswer = null;
         this.onIceCandidate = null;
-        this.onClientConnected = null;
-        this.onClientDisconnected = null;
     }
 
     connect(sessionId) {
@@ -34,10 +32,6 @@ export class SignalingClient {
 
         this.socket.on('offer-received', (data) => {
             if (this.onOffer) this.onOffer(data);
-        });
-
-        this.socket.on('answer-received', (data) => {
-            if (this.onAnswer) this.onAnswer(data);
         });
 
         this.socket.on('ice-candidate', (data) => {
