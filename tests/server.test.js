@@ -164,6 +164,81 @@ describe('Server Integration Tests', () => {
             sessionManager.sessions.delete(live.sessionId);
         });
 
+        const registerAs = async (c, sessionId, role) => {
+            c.emit('register', { sessionId, role });
+            await nextEvent(c, 'registered');
+        };
+
+        test('a displaced socket loses relay authority', async () => {
+            const { body: { sessionId: id } } = await request(app).post('/api/sessions/create');
+            const mobile = await connect();
+            await registerAs(mobile, id, 'mobile');
+            const oldDesktop = await connect();
+            await registerAs(oldDesktop, id, 'desktop');
+            const newDesktop = await connect();
+            await registerAs(newDesktop, id, 'desktop');
+
+            oldDesktop.emit('offer', { sessionId: id, sdp: 'stale' });
+            expect(await nextEvent(oldDesktop, 'error')).toBeDefined();
+            expect(await nextEvent(mobile, 'offer-received', 200)).toBeUndefined();
+
+            newDesktop.emit('offer', { sessionId: id, sdp: 'fresh' });
+            expect((await nextEvent(mobile, 'offer-received')).sdp).toBe('fresh');
+            [mobile, oldDesktop, newDesktop].forEach((c) => c.disconnect());
+        });
+
+        test('disconnect releases every binding the socket held', async () => {
+            const { body: { sessionId: a } } = await request(app).post('/api/sessions/create');
+            const { body: { sessionId: b } } = await request(app).post('/api/sessions/create');
+            const peerB = await connect();
+            await registerAs(peerB, b, 'mobile');
+            const c = await connect();
+            await registerAs(c, a, 'desktop');
+            await registerAs(c, b, 'desktop'); // moves the socket; session a must be released
+            expect(sessionManager.getSession(a).desktop.connected).toBe(false);
+            expect(sessionManager.getSession(b).desktop.connected).toBe(true);
+
+            // Direct manager check: one socket in both roles of one session
+            const s = sessionManager.createSession();
+            sessionManager.registerClient(s.sessionId, 'desktop', 'dual');
+            sessionManager.registerClient(s.sessionId, 'mobile', 'dual');
+            expect(sessionManager.removeClient('dual')).toHaveLength(2);
+            expect(s.desktop.connected || s.mobile.connected).toBe(false);
+
+            const gone = nextEvent(peerB, 'client-disconnected');
+            c.disconnect();
+            expect((await gone).role).toBe('desktop');
+            expect(sessionManager.getSession(b).desktop.connected).toBe(false);
+            peerB.disconnect();
+            [a, b, s.sessionId].forEach((x) => sessionManager.sessions.delete(x));
+        });
+
+        test('oversized or malformed sdp/candidate payloads are rejected', async () => {
+            const { body: { sessionId: id } } = await request(app).post('/api/sessions/create');
+            const desktop = await connect();
+            await registerAs(desktop, id, 'desktop');
+            const mobile = await connect();
+            await registerAs(mobile, id, 'mobile');
+
+            desktop.emit('offer', { sessionId: id, sdp: 'x'.repeat(70 * 1024) });
+            expect(await nextEvent(desktop, 'error')).toBeDefined();
+            desktop.emit('offer', { sessionId: id, sdp: 42 });
+            expect(await nextEvent(desktop, 'error')).toBeDefined();
+            desktop.emit('ice-candidate', { sessionId: id, candidate: 'x'.repeat(100) });
+            expect(await nextEvent(desktop, 'error')).toBeDefined();
+            desktop.emit('ice-candidate', { sessionId: id, candidate: { c: 'x'.repeat(9 * 1024) } });
+            expect(await nextEvent(desktop, 'error')).toBeDefined();
+            expect(await nextEvent(mobile, 'offer-received', 100)).toBeUndefined();
+
+            // Real clients send {type, sdp} objects and candidate objects
+            desktop.emit('offer', { sessionId: id, sdp: { type: 'offer', sdp: 'v=0' } });
+            expect((await nextEvent(mobile, 'offer-received')).sdp.type).toBe('offer');
+            desktop.emit('ice-candidate', { sessionId: id, candidate: { candidate: 'a' } });
+            expect((await nextEvent(mobile, 'ice-candidate')).candidate.candidate).toBe('a');
+            desktop.disconnect();
+            mobile.disconnect();
+        });
+
         test('ICE candidate queue is bounded', () => {
             const s = sessionManager.createSession();
             let accepted = 0;

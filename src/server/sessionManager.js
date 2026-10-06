@@ -48,18 +48,28 @@ class SessionManager {
         return session;
     }
 
-    removeClient(socketId) {
+    // Release every slot held by socketId (a socket may hold several if it
+    // registered more than once). `keep` ({sessionId, role}) is left untouched.
+    // Returns the list of released {sessionId, role} bindings.
+    removeClient(socketId, keep = null) {
+        const released = [];
         for (const [sessionId, session] of this.sessions.entries()) {
             for (const role of ['desktop', 'mobile']) {
-                if (session[role].socketId === socketId) {
-                    session[role].connected = false;
-                    session[role].socketId = null;
-                    session.lastActivity = Date.now();
-                    return { sessionId, role };
-                }
+                if (session[role].socketId !== socketId) continue;
+                if (keep && keep.sessionId === sessionId && keep.role === role) continue;
+                session[role].connected = false;
+                session[role].socketId = null;
+                session.lastActivity = Date.now();
+                released.push({ sessionId, role });
             }
         }
-        return null;
+        return released;
+    }
+
+    // True if socketId currently owns `role` in the session.
+    isRegistered(sessionId, role, socketId) {
+        const session = this.getSession(sessionId);
+        return !!session && session[role].connected && session[role].socketId === socketId;
     }
 
     // Add candidate DESTINED for a specific role

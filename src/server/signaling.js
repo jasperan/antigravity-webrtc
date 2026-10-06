@@ -6,6 +6,29 @@ const PEER = { desktop: 'mobile', mobile: 'desktop' };
 const isObject = (v) => v !== null && typeof v === 'object';
 const isRole = (r) => r === 'desktop' || r === 'mobile';
 
+const MAX_SDP_BYTES = 64 * 1024;
+const MAX_CANDIDATE_BYTES = 8 * 1024;
+
+// SDP is either a raw string or a serialized {type, sdp} description.
+const isValidSdp = (sdp) => {
+    if (typeof sdp === 'string') return sdp.length <= MAX_SDP_BYTES;
+    if (!isObject(sdp) || Array.isArray(sdp)) return false;
+    try {
+        return JSON.stringify(sdp).length <= MAX_SDP_BYTES;
+    } catch {
+        return false;
+    }
+};
+
+const isValidCandidate = (c) => {
+    if (!isObject(c) || Array.isArray(c)) return false;
+    try {
+        return JSON.stringify(c).length <= MAX_CANDIDATE_BYTES;
+    } catch {
+        return false;
+    }
+};
+
 // Helper to update activity
 const touchSession = (sessionId) => {
     const session = sessionManager.getSession(sessionId);
@@ -18,19 +41,33 @@ module.exports = (io) => {
     io.on('connection', (socket) => {
         console.log('New client connected:', socket.id);
 
+        // Tell the remaining peer that `role` left `sessionId`.
+        const notifyLeft = ({ sessionId, role }) => {
+            const session = sessionManager.getSession(sessionId);
+            if (!session) return;
+            const other = session[PEER[role]];
+            if (other.connected) {
+                io.to(other.socketId).emit('client-disconnected', { role });
+            }
+        };
+
         socket.on('register', (payload) => {
             if (!isObject(payload) || typeof payload.sessionId !== 'string' || !isRole(payload.role)) {
                 socket.emit('error', 'Invalid register payload');
                 return;
             }
             const { sessionId, role } = payload;
-            console.log(`Register request: ${role} for session ${sessionId}`);
-            const session = sessionManager.registerClient(sessionId, role, socket.id);
-
-            if (!session) {
+            if (!sessionManager.getSession(sessionId)) {
                 socket.emit('error', 'Session not found');
                 return;
             }
+            // A socket holds one binding: release any previous session/role.
+            sessionManager.removeClient(socket.id, { sessionId, role }).forEach((prev) => {
+                socket.leave(prev.sessionId);
+                notifyLeft(prev);
+            });
+            console.log(`Register request: ${role} for session ${sessionId}`);
+            const session = sessionManager.registerClient(sessionId, role, socket.id);
 
             socket.data.sessionId = sessionId;
             socket.data.role = role;
@@ -56,8 +93,12 @@ module.exports = (io) => {
         const relaySdp = (socket, payload, senderRole, targetRole, event) => {
             if (!isObject(payload) || typeof payload.sessionId !== 'string') return;
             const { sessionId, sdp } = payload;
-            if (socket.data.sessionId !== sessionId || socket.data.role !== senderRole) {
+            if (!sessionManager.isRegistered(sessionId, senderRole, socket.id)) {
                 socket.emit('error', `Not registered as ${senderRole} for this session`);
+                return;
+            }
+            if (!isValidSdp(sdp)) {
+                socket.emit('error', 'Invalid sdp');
                 return;
             }
             touchSession(sessionId);
@@ -79,8 +120,12 @@ module.exports = (io) => {
             const { sessionId, candidate } = payload;
             // The sender's role is the one bound at registration, not client-supplied.
             const role = socket.data.role;
-            if (socket.data.sessionId !== sessionId || !isRole(role)) {
+            if (!isRole(role) || !sessionManager.isRegistered(sessionId, role, socket.id)) {
                 socket.emit('error', 'Not registered for this session');
+                return;
+            }
+            if (!isValidCandidate(candidate)) {
+                socket.emit('error', 'Invalid candidate');
                 return;
             }
             touchSession(sessionId);
@@ -101,17 +146,7 @@ module.exports = (io) => {
 
         socket.on('disconnect', () => {
             console.log('Client disconnected:', socket.id);
-            const result = sessionManager.removeClient(socket.id);
-            if (result) {
-                const { sessionId, role } = result;
-                const session = sessionManager.getSession(sessionId);
-                if (session) {
-                    const otherRole = PEER[role];
-                    if (session[otherRole].connected) {
-                        io.to(session[otherRole].socketId).emit('client-disconnected', { role });
-                    }
-                }
-            }
+            sessionManager.removeClient(socket.id).forEach(notifyLeft);
         });
     });
 };
