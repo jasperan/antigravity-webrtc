@@ -1,5 +1,8 @@
 const { v4: uuidv4 } = require('uuid');
 
+// Bound the per-role ICE queue so an unregistered peer cannot grow memory unboundedly.
+const MAX_QUEUED_CANDIDATES = 200;
+
 class SessionManager {
     constructor() {
         this.sessions = new Map();
@@ -51,6 +54,7 @@ class SessionManager {
                 if (session[role].socketId === socketId) {
                     session[role].connected = false;
                     session[role].socketId = null;
+                    session.lastActivity = Date.now();
                     return { sessionId, role };
                 }
             }
@@ -63,7 +67,9 @@ class SessionManager {
         const session = this.getSession(sessionId);
         if (!session) return false;
 
-        session.iceCandidatesQueue[targetRole].push(candidate);
+        const queue = session.iceCandidatesQueue[targetRole];
+        if (queue.length >= MAX_QUEUED_CANDIDATES) return false;
+        queue.push(candidate);
         return true;
     }
 
@@ -78,6 +84,8 @@ class SessionManager {
     cleanupExpiredSessions(timeoutMs) {
         const now = Date.now();
         for (const [sessionId, session] of this.sessions.entries()) {
+            // Sessions with a connected client are live even when signaling is quiet.
+            if (session.desktop.connected || session.mobile.connected) continue;
             if (now - session.lastActivity > timeoutMs) {
                 this.sessions.delete(sessionId);
                 console.log(`Session ${sessionId} cleaned up due to timeout`);

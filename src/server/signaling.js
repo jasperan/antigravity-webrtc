@@ -3,6 +3,9 @@ const sessionManager = require('./sessionManager');
 // The peer role for a given role: desktop <-> mobile.
 const PEER = { desktop: 'mobile', mobile: 'desktop' };
 
+const isObject = (v) => v !== null && typeof v === 'object';
+const isRole = (r) => r === 'desktop' || r === 'mobile';
+
 // Helper to update activity
 const touchSession = (sessionId) => {
     const session = sessionManager.getSession(sessionId);
@@ -15,7 +18,12 @@ module.exports = (io) => {
     io.on('connection', (socket) => {
         console.log('New client connected:', socket.id);
 
-        socket.on('register', ({ sessionId, role }) => {
+        socket.on('register', (payload) => {
+            if (!isObject(payload) || typeof payload.sessionId !== 'string' || !isRole(payload.role)) {
+                socket.emit('error', 'Invalid register payload');
+                return;
+            }
+            const { sessionId, role } = payload;
             console.log(`Register request: ${role} for session ${sessionId}`);
             const session = sessionManager.registerClient(sessionId, role, socket.id);
 
@@ -24,6 +32,8 @@ module.exports = (io) => {
                 return;
             }
 
+            socket.data.sessionId = sessionId;
+            socket.data.role = role;
             socket.join(sessionId);
             socket.emit('registered', { sessionId, role });
 
@@ -42,7 +52,14 @@ module.exports = (io) => {
         });
 
         // Relay an SDP message to the target peer if it is connected.
-        const relaySdp = (sessionId, sdp, targetRole, event) => {
+        // Only a socket registered as `senderRole` in `sessionId` may relay.
+        const relaySdp = (socket, payload, senderRole, targetRole, event) => {
+            if (!isObject(payload) || typeof payload.sessionId !== 'string') return;
+            const { sessionId, sdp } = payload;
+            if (socket.data.sessionId !== sessionId || socket.data.role !== senderRole) {
+                socket.emit('error', `Not registered as ${senderRole} for this session`);
+                return;
+            }
             touchSession(sessionId);
             const session = sessionManager.getSession(sessionId);
             if (session && session[targetRole].connected) {
@@ -53,11 +70,19 @@ module.exports = (io) => {
             }
         };
 
-        socket.on('offer', ({ sessionId, sdp }) => relaySdp(sessionId, sdp, 'mobile', 'offer'));
+        socket.on('offer', (payload) => relaySdp(socket, payload, 'desktop', 'mobile', 'offer'));
 
-        socket.on('answer', ({ sessionId, sdp }) => relaySdp(sessionId, sdp, 'desktop', 'answer'));
+        socket.on('answer', (payload) => relaySdp(socket, payload, 'mobile', 'desktop', 'answer'));
 
-        socket.on('ice-candidate', ({ sessionId, candidate, role }) => {
+        socket.on('ice-candidate', (payload) => {
+            if (!isObject(payload) || typeof payload.sessionId !== 'string') return;
+            const { sessionId, candidate } = payload;
+            // The sender's role is the one bound at registration, not client-supplied.
+            const role = socket.data.role;
+            if (socket.data.sessionId !== sessionId || !isRole(role)) {
+                socket.emit('error', 'Not registered for this session');
+                return;
+            }
             touchSession(sessionId);
             const session = sessionManager.getSession(sessionId);
             if (!session) return;
@@ -72,10 +97,6 @@ module.exports = (io) => {
                 console.log(`Queuing ICE candidate for ${targetRole}`);
                 sessionManager.addIceCandidate(sessionId, targetRole, candidate);
             }
-        });
-
-        socket.on('ping', () => {
-            socket.emit('pong');
         });
 
         socket.on('disconnect', () => {

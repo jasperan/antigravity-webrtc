@@ -110,4 +110,66 @@ describe('Server Integration Tests', () => {
         });
 
     }, 10000); // Increase timeout
+
+    describe('hardening', () => {
+        const sessionManager = require('../src/server/sessionManager');
+        const connect = () => new Promise((resolve) => {
+            const c = new Client(`http://localhost:${config.port}`);
+            c.on('connect', () => resolve(c));
+        });
+        const nextEvent = (c, ev, ms = 500) => new Promise((resolve) => {
+            const t = setTimeout(() => resolve(undefined), ms);
+            c.once(ev, (d) => { clearTimeout(t); resolve(d); });
+        });
+
+        test('malformed payloads and bad roles do not crash the server', async () => {
+            const res = await request(app).post('/api/sessions/create');
+            const id = res.body.sessionId;
+            const c = await connect();
+            c.emit('register', null);
+            expect(await nextEvent(c, 'error')).toBeDefined();
+            c.emit('register', { sessionId: id, role: 'admin' });
+            expect(await nextEvent(c, 'error')).toBeDefined();
+            c.emit('ice-candidate', { sessionId: id, candidate: {}, role: 'bogus' });
+            c.emit('offer', undefined);
+            // server must still be alive and serving
+            const status = await request(app).get(`/api/sessions/${id}/status`);
+            expect(status.statusCode).toBe(200);
+            expect(status.body.desktopConnected).toBe(false);
+            c.disconnect();
+        });
+
+        test('unregistered socket cannot inject offers into a session', async () => {
+            const { body: { sessionId: id } } = await request(app).post('/api/sessions/create');
+            const mobile = await connect();
+            mobile.emit('register', { sessionId: id, role: 'mobile' });
+            await nextEvent(mobile, 'registered');
+            const attacker = await connect();
+            attacker.emit('offer', { sessionId: id, sdp: 'evil' });
+            expect(await nextEvent(attacker, 'error')).toBeDefined();
+            expect(await nextEvent(mobile, 'offer-received', 200)).toBeUndefined();
+            mobile.disconnect();
+            attacker.disconnect();
+        });
+
+        test('sessions with a connected client are not expired; idle ones are', () => {
+            const live = sessionManager.createSession();
+            const idle = sessionManager.createSession();
+            sessionManager.registerClient(live.sessionId, 'desktop', 'sock-live');
+            live.lastActivity = idle.lastActivity = Date.now() - 10 * 60 * 1000;
+            sessionManager.cleanupExpiredSessions(5 * 60 * 1000);
+            expect(sessionManager.getSession(live.sessionId)).toBeDefined();
+            expect(sessionManager.getSession(idle.sessionId)).toBeUndefined();
+            sessionManager.removeClient('sock-live');
+            sessionManager.sessions.delete(live.sessionId);
+        });
+
+        test('ICE candidate queue is bounded', () => {
+            const s = sessionManager.createSession();
+            let accepted = 0;
+            for (let i = 0; i < 1000; i++) if (sessionManager.addIceCandidate(s.sessionId, 'mobile', { i })) accepted++;
+            expect(accepted).toBeLessThan(1000);
+            sessionManager.sessions.delete(s.sessionId);
+        });
+    });
 });
