@@ -1,98 +1,251 @@
+/* Bench-equipment panel: matte black surfaces, silkscreened labels, one lamp. */
+:root {
+  --surface-0: #121212;
+  --surface-1: #1a1a1a;
+  --surface-2: #222222;
+  --surface-3: #2c2c2c;
+  --text-1: #e8e8e8;
+  --text-2: #a0a0a0;
+  --text-3: #6b6b6b;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --ok: #4cc38a;
+  --warn: #e0a23c;
+  --err: #e5484d;
+  --radius-panel: 8px;
+  --radius-key: 6px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   margin: 0;
-  padding: 20px;
-  background-color: #1a1a1a;
-  color: #fff;
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.5;
+  background-color: var(--surface-0);
+  color: var(--text-1);
+  -webkit-font-smoothing: antialiased;
 }
 
-.container {
+:focus-visible {
+  outline: 2px solid var(--ok);
+  outline-offset: 2px;
+}
+
+.mono {
+  font-family: var(--mono);
+}
+
+/* ------------------------------------------------------------- topbar */
+.topbar {
   display: flex;
-  flex-direction: column;
-  gap: 15px;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+  padding: 0 24px;
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border);
 }
 
-h2 {
-  margin: 0 0 10px 0;
-  font-size: 1.2rem;
-  color: #61dafb;
+.lamp {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+  flex: 0 0 auto;
+  transition: background 150ms var(--ease);
 }
 
-.status-panel {
-  background: #2a2a2a;
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid #333;
+.lamp.connected {
+  background: var(--ok);
 }
 
-.status-item {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 5px;
-  font-size: 0.9rem;
+.lamp.connecting {
+  background: var(--warn);
+}
+
+.topbar-title {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.topbar-session {
+  font-size: 13px;
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .status-value {
-  font-weight: bold;
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-3);
 }
 
-.status-value.connected { color: #4caf50; }
-.status-value.connecting { color: #ff9800; }
-.status-value.disconnected { color: #f44336; }
+.status-value.connected {
+  color: var(--ok);
+}
+
+.status-value.connecting {
+  color: var(--warn);
+}
+
+/* -------------------------------------------------------------- panel */
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  max-width: 640px;
+}
 
 .controls {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
-button {
-  padding: 8px 16px;
-  border-radius: 4px;
-  border: none;
-  background: #61dafb;
-  color: #000;
-  font-weight: bold;
-  cursor: pointer;
-  width: 100%;
-}
-
-button:hover {
-  background: #4fa8d1;
-}
-
-button:disabled {
-  background: #444;
-  color: #888;
-  cursor: not-allowed;
-}
-
-.preview-area {
-  margin-top: 10px;
-  border: 1px solid #444;
-  height: 60px; /* Reduced since we only capture a small strip */
-  overflow: hidden;
-  background: #000;
+.btn {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 1;
+  min-height: 40px;
+  padding: 0 20px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-key);
+  background: var(--surface-2);
+  color: var(--text-1);
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 120ms var(--ease), border-color 120ms var(--ease), opacity 120ms var(--ease);
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--text-3);
+}
+
+.btn.primary {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #0b1210;
+}
+
+.btn.primary:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.panel {
+  margin: 0;
+  padding: 16px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  min-width: 0;
+}
+
+.panel-label {
+  padding: 0 4px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.region-inputs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.field-label {
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+.field input {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-key);
+  color: var(--text-1);
+  font-family: var(--mono);
+  font-size: 13px;
+  transition: border-color 120ms var(--ease);
+}
+
+.field input:focus {
+  border-color: var(--border-strong);
+}
+
+/* ------------------------------------------------------------ preview */
+.preview-area {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background: #000;
+  padding: 8px;
+}
+
+.preview-frame {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
+  overflow: hidden;
+}
+
+/* Corner ticks, same frame language as the phone's capture pane. */
+.preview-frame::before,
+.preview-frame::after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 1px solid rgba(232, 232, 232, 0.4);
+  pointer-events: none;
+}
+
+.preview-frame::before {
+  top: 0;
+  left: 0;
+  border-right: none;
+  border-bottom: none;
+}
+
+.preview-frame::after {
+  bottom: 0;
+  right: 0;
+  border-left: none;
+  border-top: none;
 }
 
 canvas {
   max-width: 100%;
-  border: 1px solid #555;
-}
-
-.region-inputs {
-  display: flex;
-  gap: 5px;
-  margin-top: 5px;
-}
-
-input {
-  width: 50px;
-  background: #333;
-  border: 1px solid #444;
-  color: white;
-  padding: 4px;
-  border-radius: 3px;
+  display: block;
 }

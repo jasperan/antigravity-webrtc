@@ -13,6 +13,7 @@ const state = {
 
 // UI Elements
 const statusEl = document.getElementById('connection-status');
+const lampEl = document.getElementById('connection-lamp');
 const sessionIdEl = document.getElementById('session-id');
 const btnStart = document.getElementById('btn-start');
 const btnStop = document.getElementById('btn-stop');
@@ -41,6 +42,7 @@ async function init() {
         signaling = new SignalingClient(CONFIG.serverUrl, (status) => {
             statusEl.textContent = status;
             statusEl.className = `status-value ${status}`;
+            lampEl.className = `lamp ${status}`;
         });
 
         signaling.connect(state.sessionId);
@@ -53,6 +55,7 @@ async function init() {
     } catch (e) {
         console.error('Failed to init:', e);
         statusEl.textContent = 'Init Failed';
+        lampEl.className = 'lamp';
     }
 }
 

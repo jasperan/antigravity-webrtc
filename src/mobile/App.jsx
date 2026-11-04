@@ -17,40 +17,44 @@ function App() {
         if (sessionId.trim()) setJoined(true);
     };
 
-    return (
-        <div className="app-container" style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-            {!joined ? (
-                <div style={{ padding: 20 }}>
-                    <h2>Connect to Desktop</h2>
+    if (!joined) {
+        return (
+            <div className="app-container">
+                <div className="connect">
+                    <h2>Connect to desktop</h2>
+                    <p>Pair with the session id shown in the desktop panel.</p>
                     <form onSubmit={handleJoin}>
                         <input
                             type="text"
-                            placeholder="Session ID"
+                            className="session-input"
+                            placeholder="session id"
+                            aria-label="Session id"
                             value={sessionId}
                             onChange={(e) => setSessionId(e.target.value)}
-                            style={{ padding: 10, width: '100%', marginBottom: 10, boxSizing: 'border-box' }}
+                            autoCapitalize="off"
+                            autoCorrect="off"
+                            spellCheck={false}
                         />
-                        <button type="submit" style={{ padding: 10, width: '100%' }}>Connect</button>
+                        <button type="submit" className="btn primary block">Connect</button>
                     </form>
                 </div>
-            ) : (
-                <>
-                    <div style={{ padding: 10, background: '#333' }}>
-                        <span>Status: </span>
-                        <span style={{ color: status === 'connected' ? '#4caf50' : '#f44336' }}>
-                            {status}
-                        </span>
-                    </div>
+            </div>
+        );
+    }
 
-                    <div style={{ flex: '0 0 auto', maxHeight: '60%' }}>
-                        <RemoteVideoDisplay stream={remoteStream} />
-                    </div>
+    return (
+        <div className="app-container">
+            <div className="statusbar">
+                <span className={`lamp ${status}`} aria-hidden="true" />
+                <span className="status-session">{sessionId}</span>
+                <span className="status-text" role="status">{status}</span>
+            </div>
 
-                    <div style={{ flex: 1, overflow: 'hidden' }}>
-                        <KeyboardInput onKeystroke={sendKeystroke} />
-                    </div>
-                </>
-            )}
+            <div className="capture">
+                <RemoteVideoDisplay stream={remoteStream} />
+            </div>
+
+            <KeyboardInput onKeystroke={sendKeystroke} />
         </div>
     );
 }

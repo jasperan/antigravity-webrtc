@@ -1,5 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 
+const Arrow = ({ d }) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+        <path d={d} />
+    </svg>
+);
+
 const KeyboardInput = ({ onKeystroke }) => {
     const [text, setText] = useState('');
     const inputRef = useRef(null);
@@ -33,7 +39,7 @@ const KeyboardInput = ({ onKeystroke }) => {
     const handleChange = (e) => {
         setText(e.target.value);
         // If we want to clear it to keep typing stream?
-        // setText(''); 
+        // setText('');
         // But keeping it shows history.
     };
 
@@ -44,37 +50,58 @@ const KeyboardInput = ({ onKeystroke }) => {
         if (inputRef.current) inputRef.current.focus();
     };
 
+    const keys = [
+        { label: 'up', aria: 'Arrow up', key: 'ArrowUp', code: 'ArrowUp', icon: 'm5 12 7-7 7 7M12 19V5' },
+        { label: 'down', aria: 'Arrow down', key: 'ArrowDown', code: 'ArrowDown', icon: 'm5 12 7 7 7-7M12 5v14' },
+        { label: 'left', aria: 'Arrow left', key: 'ArrowLeft', code: 'ArrowLeft', icon: 'M19 12H5m7 7-7-7 7-7' },
+        { label: 'right', aria: 'Arrow right', key: 'ArrowRight', code: 'ArrowRight', icon: 'M5 12h14m-7-7 7 7-7 7' }
+    ];
+
+    const modifiers = [
+        { label: 'Enter', key: 'Enter', code: 'Enter' },
+        { label: 'Bksp', key: 'Backspace', code: 'Backspace' },
+        { label: 'Tab', key: 'Tab', code: 'Tab' },
+        { label: 'Esc', key: 'Escape', code: 'Escape' }
+    ];
+
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: 10, boxSizing: 'border-box' }}>
+        <div className="keys">
             <textarea
                 ref={inputRef}
+                className="keys-input"
                 value={text}
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
-                placeholder="Type here..."
-                style={{
-                    flex: 1,
-                    width: '100%',
-                    background: '#222',
-                    color: '#fff',
-                    border: '1px solid #444',
-                    borderRadius: 4,
-                    padding: 10,
-                    fontSize: '16px',
-                    resize: 'none'
-                }}
+                placeholder="Type into the remote"
+                aria-label="Type into the remote"
             />
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 5, marginTop: 10, height: 50 }}>
-                <button onClick={() => sendSpecial('ArrowUp', 'ArrowUp')}>↑</button>
-                <button onClick={() => sendSpecial('ArrowDown', 'ArrowDown')}>↓</button>
-                <button onClick={() => sendSpecial('ArrowLeft', 'ArrowLeft')}>←</button>
-                <button onClick={() => sendSpecial('ArrowRight', 'ArrowRight')}>→</button>
+            <div className="key-grid">
+                {keys.map((k) => (
+                    <button
+                        key={k.code}
+                        type="button"
+                        className="key"
+                        aria-label={k.aria}
+                        onClick={() => sendSpecial(k.key, k.code)}
+                    >
+                        <Arrow d={k.icon} />
+                    </button>
+                ))}
+            </div>
 
-                <button onClick={() => sendSpecial('Enter', 'Enter')}>Enter</button>
-                <button onClick={() => sendSpecial('Backspace', 'Backspace')}>Bksp</button>
-                <button onClick={() => sendSpecial('Tab', 'Tab')}>Tab</button>
-                <button onClick={() => sendSpecial('Escape', 'Escape')}>Esc</button>
+            <div className="key-grid">
+                {modifiers.map((k) => (
+                    <button
+                        key={k.code}
+                        type="button"
+                        className="key mod"
+                        aria-label={k.label}
+                        onClick={() => sendSpecial(k.key, k.code)}
+                    >
+                        {k.label}
+                    </button>
+                ))}
             </div>
         </div>
     );

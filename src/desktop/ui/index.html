@@ -6,41 +6,47 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="container">
-    <h2>Remote Control</h2>
-    
-    <div class="status-panel">
-      <div class="status-item">
-        <span>Status:</span>
-        <span id="connection-status" class="status-value disconnected">Disconnected</span>
-      </div>
-      <div class="status-item">
-        <span>Session ID:</span>
-        <span id="session-id" class="status-value">...</span>
-      </div>
-    </div>
+  <header class="topbar">
+    <span id="connection-lamp" class="lamp" aria-hidden="true"></span>
+    <span class="topbar-title">Remote control</span>
+    <span class="topbar-session mono"><span id="session-id">…</span></span>
+    <span id="connection-status" class="status-value disconnected">Disconnected</span>
+  </header>
 
+  <main class="container">
     <div class="controls">
-      <button id="btn-start">Start Capture</button>
-      <button id="btn-stop" disabled>Stop</button>
+      <button id="btn-start" class="btn primary">Start capture</button>
+      <button id="btn-stop" class="btn" disabled>Stop</button>
     </div>
 
-    <div class="status-panel">
-      <div class="status-item" style="display:block">
-         <div style="margin-bottom:5px">Region (x, y, w, h):</div>
-         <div class="region-inputs">
-           <input type="number" id="inp-x" value="0">
-           <input type="number" id="inp-y" value="0">
-           <input type="number" id="inp-w" value="400">
-           <input type="number" id="inp-h" value="50">
-         </div>
+    <fieldset class="panel region">
+      <legend class="panel-label">Capture region</legend>
+      <div class="region-inputs">
+        <label class="field">
+          <span class="field-label mono">x</span>
+          <input type="number" id="inp-x" value="0">
+        </label>
+        <label class="field">
+          <span class="field-label mono">y</span>
+          <input type="number" id="inp-y" value="0">
+        </label>
+        <label class="field">
+          <span class="field-label mono">w</span>
+          <input type="number" id="inp-w" value="400">
+        </label>
+        <label class="field">
+          <span class="field-label mono">h</span>
+          <input type="number" id="inp-h" value="50">
+        </label>
       </div>
-    </div>
+    </fieldset>
 
     <div class="preview-area">
-      <canvas id="preview-canvas" width="400" height="50"></canvas>
+      <div class="preview-frame">
+        <canvas id="preview-canvas" width="400" height="50"></canvas>
+      </div>
     </div>
-  </div>
+  </main>
 
   <script type="module" src="app.js"></script>
 </body>

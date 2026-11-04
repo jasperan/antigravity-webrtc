@@ -1,10 +1,327 @@
+/* Shared bench-equipment ramp: matte black surfaces, one lit indicator. */
+:root {
+    --surface-0: #121212;
+    --surface-1: #1a1a1a;
+    --surface-2: #222222;
+    --surface-3: #2c2c2c;
+    --text-1: #e8e8e8;
+    --text-2: #a0a0a0;
+    --text-3: #6b6b6b;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --ok: #4cc38a;
+    --warn: #e0a23c;
+    --err: #e5484d;
+    --radius-panel: 8px;
+    --radius-key: 6px;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-        sans-serif;
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: #121212;
-    color: white;
+    background-color: var(--surface-0);
+    color: var(--text-1);
+}
+
+:focus-visible {
+    outline: 2px solid var(--ok);
+    outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------- shell */
+.app-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface-0);
+}
+
+/* -------------------------------------------------------------- connect */
+.connect {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 460px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.connect h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+}
+
+.connect p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-2);
+}
+
+.connect form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.session-input {
+    width: 100%;
+    padding: 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-key);
+    color: var(--text-1);
+    font-family: var(--mono);
+    font-size: 15px;
+    transition: border-color 120ms var(--ease);
+}
+
+.session-input::placeholder {
+    color: var(--text-3);
+}
+
+.session-input:focus,
+.session-input:focus-visible {
+    outline: none;
+    border-color: var(--text-3);
+}
+
+/* ------------------------------------------------------------ statusbar */
+.statusbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 44px;
+    padding: 0 16px;
+    background: var(--surface-1);
+    border-bottom: 1px solid var(--border);
+    flex: 0 0 auto;
+}
+
+.lamp {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--surface-3);
+    box-shadow: inset 0 0 0 1px var(--border-strong);
+    flex: 0 0 auto;
+    transition: background 150ms var(--ease);
+}
+
+.lamp.connected {
+    background: var(--ok);
+}
+
+.lamp.connecting {
+    background: var(--warn);
+}
+
+.status-session {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.status-text {
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--text-2);
+}
+
+/* -------------------------------------------------------------- capture */
+.capture {
+    flex: 0 0 auto;
+    max-height: 60%;
+    padding: 12px;
+    background: var(--surface-0);
+}
+
+.capture-frame {
+    position: relative;
+    height: 100%;
+    min-height: 120px;
+    background: #000;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* Corner ticks: the only marking on the matte. */
+.capture-frame::before,
+.capture-frame::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 1px solid rgba(232, 232, 232, 0.4);
+    pointer-events: none;
+}
+
+.capture-frame::before {
+    top: 8px;
+    left: 8px;
+    border-right: none;
+    border-bottom: none;
+}
+
+.capture-frame::after {
+    bottom: 8px;
+    right: 8px;
+    border-left: none;
+    border-top: none;
+}
+
+.capture-frame video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.capture-empty {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-3);
+}
+
+/* ---------------------------------------------------------------- keys */
+.keys {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.keys-input {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    padding: 12px;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-key);
+    color: var(--text-1);
+    font-family: var(--mono);
+    font-size: 16px;
+    line-height: 1.5;
+    resize: none;
+    transition: border-color 120ms var(--ease);
+}
+
+.keys-input::placeholder {
+    color: var(--text-3);
+}
+
+/* The typing surface holds focus the whole session, so it shows focus as a
+   border change rather than a ring around the whole box. */
+.keys-input:focus,
+.keys-input:focus-visible {
+    outline: none;
+    border-color: var(--text-3);
+}
+
+.key-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    flex: 0 0 auto;
+}
+
+.key {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 48px;
+    padding: 0;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-key);
+    color: var(--text-1);
+    font-family: var(--mono);
+    font-size: 14px;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 120ms var(--ease), border-color 120ms var(--ease);
+}
+
+.key:hover {
+    border-color: var(--border-strong);
+}
+
+.key:active {
+    background: var(--surface-3);
+}
+
+.key svg {
+    width: 18px;
+    height: 18px;
+}
+
+.key.mod {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--text-2);
+}
+
+/* -------------------------------------------------------------- buttons */
+.btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 20px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-key);
+    background: var(--surface-2);
+    color: var(--text-1);
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 120ms var(--ease), border-color 120ms var(--ease);
+}
+
+.btn:hover {
+    border-color: var(--text-3);
+}
+
+.btn.primary {
+    background: var(--ok);
+    border-color: var(--ok);
+    color: #0b1210;
+}
+
+.btn.primary:hover {
+    opacity: 0.92;
+}
+
+.btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn.block {
+    width: 100%;
 }

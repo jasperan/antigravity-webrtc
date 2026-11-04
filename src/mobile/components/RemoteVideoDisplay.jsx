@@ -10,24 +10,11 @@ const RemoteVideoDisplay = ({ stream }) => {
     }, [stream]);
 
     return (
-        <div style={{
-            width: '100%',
-            height: '100%',
-            background: 'black',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center'
-        }}>
+        <div className="capture-frame">
             {stream ? (
-                <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
+                <video ref={videoRef} autoPlay playsInline muted />
             ) : (
-                <div style={{ color: '#666' }}>Waiting for video...</div>
+                <div className="capture-empty">no capture yet</div>
             )}
         </div>
     );
