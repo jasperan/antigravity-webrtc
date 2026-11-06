@@ -51,8 +51,8 @@ if (typeof cleanupInterval.unref === 'function') cleanupInterval.unref();
 
 // Start server
 if (require.main === module) {
-    server.listen(config.port, () => {
-        console.log(`Signaling server running on port ${config.port}`);
+    server.listen(config.port, config.host, () => {
+        console.log(`Signaling server running on ${config.host}:${config.port}`);
     });
 }
 
