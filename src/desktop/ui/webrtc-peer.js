@@ -71,6 +71,17 @@ export class WebRTCPeer {
         };
     }
 
+    // Revoke the remote peer: closing the connection also closes the keystroke data channel.
+    close() {
+        if (this.signaling.onAnswer) this.signaling.onAnswer = null;
+        if (this.signaling.onIceCandidate) this.signaling.onIceCandidate = null;
+        if (this.signaling.onClientConnected) this.signaling.onClientConnected = null;
+        if (this.peerConnection) {
+            this.peerConnection.close();
+            this.peerConnection = null;
+        }
+    }
+
     async handleAnswer({ sdp }) {
         if (!this.peerConnection) return;
         try {

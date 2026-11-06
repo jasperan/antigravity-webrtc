@@ -81,6 +81,10 @@ btnStart.addEventListener('click', async () => {
 
 btnStop.addEventListener('click', () => {
     capturer.stopCapture();
+    if (webrtc) {
+        webrtc.close();
+        webrtc = null;
+    }
     updateUI();
 });
 
