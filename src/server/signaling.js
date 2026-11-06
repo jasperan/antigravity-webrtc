@@ -67,7 +67,18 @@ module.exports = (io) => {
                 notifyLeft(prev);
             });
             console.log(`Register request: ${role} for session ${sessionId}`);
-            const session = sessionManager.registerClient(sessionId, role, socket.id);
+            const claim = sessionManager.registerClient(sessionId, role, socket.id);
+            if (!claim) {
+                socket.emit('error', 'Session not found');
+                return;
+            }
+            if (claim.conflict) {
+                console.warn(`Refused ${role} claim on session ${sessionId}: slot occupied`);
+                socket.emit('error', `Session already has a connected ${role}`);
+                io.to(claim.session[role].socketId).emit('role-claim-refused', { role });
+                return;
+            }
+            const session = claim.session;
 
             socket.data.sessionId = sessionId;
             socket.data.role = role;

@@ -18,7 +18,7 @@ describe('Server Integration Tests', () => {
         // Wait, the index.js logic says: if (require.main === module) server.listen...
         // So when I require it, it WON'T listen. I need to listen manually.
         if (!server.listening) {
-            server.listen(config.port, () => {
+            server.listen(config.port, config.host, () => {
                 done();
             });
         } else {
@@ -169,22 +169,29 @@ describe('Server Integration Tests', () => {
             await nextEvent(c, 'registered');
         };
 
-        test('a displaced socket loses relay authority', async () => {
+        test('a second claim on an occupied role is refused and the holder keeps authority', async () => {
             const { body: { sessionId: id } } = await request(app).post('/api/sessions/create');
             const mobile = await connect();
             await registerAs(mobile, id, 'mobile');
-            const oldDesktop = await connect();
-            await registerAs(oldDesktop, id, 'desktop');
-            const newDesktop = await connect();
-            await registerAs(newDesktop, id, 'desktop');
+            const desktop = await connect();
+            await registerAs(desktop, id, 'desktop');
+            const attacker = await connect();
+            attacker.emit('register', { sessionId: id, role: 'desktop' });
+            expect(await nextEvent(attacker, 'error')).toMatch(/already has/);
+            expect(await nextEvent(desktop, 'role-claim-refused')).toEqual({ role: 'desktop' });
 
-            oldDesktop.emit('offer', { sessionId: id, sdp: 'stale' });
-            expect(await nextEvent(oldDesktop, 'error')).toBeDefined();
+            attacker.emit('offer', { sessionId: id, sdp: 'evil' });
+            expect(await nextEvent(attacker, 'error')).toBeDefined();
             expect(await nextEvent(mobile, 'offer-received', 200)).toBeUndefined();
 
-            newDesktop.emit('offer', { sessionId: id, sdp: 'fresh' });
+            desktop.emit('offer', { sessionId: id, sdp: 'fresh' });
             expect((await nextEvent(mobile, 'offer-received')).sdp).toBe('fresh');
-            [mobile, oldDesktop, newDesktop].forEach((c) => c.disconnect());
+            [mobile, desktop, attacker].forEach((c) => c.disconnect());
+        });
+
+        test('server binds the configured host, not the wildcard', () => {
+            expect(config.host).toBe(process.env.SERVER_HOST || '127.0.0.1');
+            expect(server.address().address).toBe(config.host);
         });
 
         test('disconnect releases every binding the socket held', async () => {

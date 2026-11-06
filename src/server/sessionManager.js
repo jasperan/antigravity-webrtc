@@ -37,15 +37,17 @@ class SessionManager {
 
     registerClient(sessionId, role, socketId) {
         const session = this.getSession(sessionId);
-        if (!session) return null;
+        if (!session || !session[role]) return null;
 
-        if (session[role]) {
-            session[role].socketId = socketId;
-            session[role].connected = true;
+        // A live holder keeps the slot; it is freed only by its own disconnect.
+        const slot = session[role];
+        if (slot.connected && slot.socketId !== socketId) {
+            return { session, conflict: true };
         }
-
+        slot.socketId = socketId;
+        slot.connected = true;
         session.lastActivity = Date.now();
-        return session;
+        return { session, conflict: false };
     }
 
     // Release every slot held by socketId (a socket may hold several if it
